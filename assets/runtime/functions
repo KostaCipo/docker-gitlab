@@ -881,7 +881,8 @@ initialize_logdir() {
 initialize_datadir() {
   echo "Initializing datadir..."
   chmod 755 ${GITLAB_DATA_DIR}
-  chown ${GITLAB_USER}: ${GITLAB_DATA_DIR}
+  # only change owner if required
+  [ $( stat -c %U:%G ) != "${GITLAB_USER}:${GITLAB_USER}" ] && chown ${GITLAB_USER}: ${GITLAB_DATA_DIR}
 
   # create the ssh directory for server keys
   mkdir -p ${GITLAB_DATA_DIR}/ssh
@@ -889,13 +890,14 @@ initialize_datadir() {
 
   # create the repositories directory and make sure it has the right permissions
   mkdir -p ${GITLAB_REPOS_DIR}
-  chown ${GITLAB_USER}: ${GITLAB_REPOS_DIR}
-  chmod ug+rwX,o-rwx ${GITLAB_REPOS_DIR}
+  # chown and chmod only needed files
+  [ $(stat -c %U:%G ${GITLAB_REPOS_DIR} ) ==  ${GITLAB_USER}:${GITLAB_USER} ] && chown ${GITLAB_USER}: ${GITLAB_REPOS_DIR}
+  [ $(find ${GITLAB_REPOS_DIR}  \! -perm ug=rwX | wc -l ) -ne 0 ] && chmod ug+rwX,o-rwx ${GITLAB_REPOS_DIR}
   exec_as_git chmod g+s ${GITLAB_REPOS_DIR}
 
   # create build traces directory
   mkdir -p ${GITLAB_BUILDS_DIR}
-  chmod u+rwX ${GITLAB_BUILDS_DIR}
+  [ $(find ${GITLAB_REPOS_DIR}  \! -perm u=rwX | wc -l ) -ne 0 ] && chmod u+rwX ${GITLAB_BUILDS_DIR}
   chown ${GITLAB_USER}: ${GITLAB_BUILDS_DIR}
 
   # gitlab:backup:create does not respect the builds_path configuration, so we
