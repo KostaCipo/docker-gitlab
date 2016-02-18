@@ -880,8 +880,9 @@ initialize_logdir() {
 
 initialize_datadir() {
   echo "Initializing datadir..."
-  chmod 755 ${GITLAB_DATA_DIR}
-  chown ${GITLAB_USER}: ${GITLAB_DATA_DIR}
+  # only change permissions and owner if required
+  [ $( stat -c %a    ${GITLAB_DATA_DIR} ) != '755'] &&  chmod 755 ${GITLAB_DATA_DIR}
+  [ $( stat -c %U:%G ${GITLAB_DATA_DIR} ) != "${GITLAB_USER}:${GITLAB_USER}" ] && chown ${GITLAB_USER}: ${GITLAB_DATA_DIR}  
 
   # create the ssh directory for server keys
   mkdir -p ${GITLAB_DATA_DIR}/ssh
